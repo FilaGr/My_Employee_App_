@@ -8,6 +8,7 @@ import os
 con = sqlite3.connect('employees.db')
 cursor = con.cursor()
 default_img = "person.png"
+employee_id = None
 
 
 class Main(QWidget):
@@ -31,6 +32,7 @@ class Main(QWidget):
         self.btn_new = QPushButton("New")
         self.btn_new.clicked.connect(self.add_employee)
         self.btn_update = QPushButton("Update")
+        self.btn_update.clicked.connect(self.update_record)
         self.btn_delete = QPushButton("Delete")
         self.btn_delete.clicked.connect(self.delete_employee)
 
@@ -115,20 +117,122 @@ class Main(QWidget):
         self.left_layout.addRow("Email: ", email)
         self.left_layout.addRow("Address: ", address)
 
-    def delete_employee(self):
-        employee = self.employee_list.currentItem().text()
-        id = employee.split("-")[0]
-        mbox = QMessageBox.question(self, "Warning", "Are you sure you want to delete this employee?", QMessageBox.Yes |
-                                    QMessageBox.No, QMessageBox.No)
-        if mbox == QMessageBox.Yes:
-            try:
-                query = "DELETE FROM employees WHERE id=?"
-                cursor.execute(query, (id, ))
-                con.commit()
-                QMessageBox.information(self, "Information", "Employee was deleted")
-            except:
-                QMessageBox.information(self, "Warning", "Employee was not deleted")
+    def refresh(self):
+        self.close()
+        self.main = Main()
 
+    def delete_employee(self):
+        if self.employee_list.selectedItems():
+
+            employee = self.employee_list.currentItem().text()
+            id = employee.split("-")[0]
+            mbox = QMessageBox.question(self, "Warning", "Are you sure you want to delete this employee?",
+                                        QMessageBox.Yes |
+                                        QMessageBox.No, QMessageBox.No)
+            if mbox == QMessageBox.Yes:
+                try:
+                    query = "DELETE FROM employees WHERE id=?"
+                    cursor.execute(query, (id, ))
+                    con.commit()
+                    QMessageBox.information(self, "Information", "Employee was deleted")
+                    self.refresh()
+                except:
+                    QMessageBox.information(self, "Warning", "Employee was not deleted")
+
+    def update_record(self):
+        global employee_id
+        if self.employee_list.selectedItems():
+            employee = self.employee_list.currentItem().text()
+            employee_id = employee.split("-")[0]
+            self.update_window = UpdateEmployee()
+            self.close()
+        else:
+            QMessageBox.information(self, "Information", "please select an employee to update")
+
+
+class UpdateEmployee(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Update Employee")
+        self.setGeometry(450, 150, 450, 600)
+        self.ui()
+        self.show()
+
+    def ui(self):
+        self.main_design()
+        self.layouts()
+
+    def closeEvent(self, event):
+        self.main = Main()
+
+    def main_design(self):
+        # top layout widgets
+        self.setStyleSheet("background-color: white; font-size: 14pt; font-family: Times")
+        self.title = QLabel("Employee")
+        # line 72 if we wanted to add background color. use ; to separate properties
+        # self.title.setStyleSheet('font-size: 24pt;font-family:Arial Bold; background-color: red')
+        self.title.setStyleSheet('font-size: 24pt;font-family:Arial Bold')
+        self.img_add = QLabel()
+        self.img_add.setPixmap(QPixmap("icons/person.png"))
+
+        # bottom layout widgets
+
+        self.name_label = QLabel("Name : ")
+        self.name_entry = QLineEdit()
+        self.name_entry.setStyleSheet('font-size: 10pt')
+        self.name_entry.setPlaceholderText("Enter Employee Name")
+        self.surname_label = QLabel("Surname : ")
+        self.surname_entry = QLineEdit()
+        self.surname_entry.setStyleSheet('font-size: 10pt')
+        self.surname_entry.setPlaceholderText("Enter Employee Surname")
+        self.phone_label = QLabel("Phone : ")
+        self.phone_entry = QLineEdit()
+        self.phone_entry.setStyleSheet('font-size: 10pt')
+        self.phone_entry.setPlaceholderText("Enter Employee Phone Number")
+        self.email_label = QLabel("Email : ")
+        self.email_entry = QLineEdit()
+        self.email_entry.setStyleSheet('font-size: 10pt')
+        self.email_entry.setPlaceholderText("Enter Employee Email")
+        self.img_label = QLabel("Picture : ")
+        self.img_btn = QPushButton("Browse")
+        self.img_btn.setStyleSheet("background-color: orange; font-size: 10pt")
+
+        self.address_label = QLabel("Address : ")
+        self.address_entry = QTextEdit()
+        self.update_button = QPushButton("Update")
+        self.update_button.setStyleSheet("background-color: orange; font-size: 10pt")
+
+
+    def layouts(self):
+        # layouts
+        self.main_layout = QVBoxLayout()
+        self.top_layout = QVBoxLayout()
+        self.bottom_layout = QFormLayout()
+
+        # adding child layouts to main layout
+        self.main_layout.addLayout(self.top_layout)
+        self.main_layout.addLayout(self.bottom_layout)
+
+        # adding widgets to layouts
+
+        # Top Layout
+        self.top_layout.addStretch()
+        self.top_layout.addWidget(self.title)
+        self.top_layout.addWidget(self.img_add)
+        self.top_layout.addStretch()
+        self.top_layout.setContentsMargins(110, 20, 10, 30)  # left, top, right, bottom
+
+        # Bottom Layout
+        self.bottom_layout.addRow(self.name_label, self.name_entry)
+        self.bottom_layout.addRow(self.surname_label, self.surname_entry)
+        self.bottom_layout.addRow(self.phone_label, self.phone_entry)
+        self.bottom_layout.addRow(self.email_label, self.email_entry)
+        self.bottom_layout.addRow(self.img_label, self.img_btn)
+        self.bottom_layout.addRow(self.address_label, self.address_entry)
+        self.bottom_layout.addRow('', self.update_button)
+
+        # setting main layout for window
+        self.setLayout(self.main_layout)
 
 
 class AddEmployee(QWidget):
@@ -239,11 +343,12 @@ class AddEmployee(QWidget):
         if name and surname and phone != "":
             try:
                 query = "INSERT INTO employees (name, surname, phone, email, image, address) VALUES(?, ?, ?, ?, ?, ?)"
-                cursor.execute(query,(name, surname, phone, email, img, address))
+                cursor.execute(query, (name, surname, phone, email, img, address))
                 con.commit()
                 QMessageBox.information(self, "Success", "Employee has been added")
                 self.close()
                 self.main = Main()
+
             except:
                 QMessageBox.information(self, "Warning", "Employee hasn't been added. "
                                                          "Please check the fields and try again")
