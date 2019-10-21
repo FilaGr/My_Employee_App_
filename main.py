@@ -73,7 +73,7 @@ class Main(QWidget):
     def display_record(self):
         pass
 
-    def display_first_record(self):
+    def display_first_record(self):  # TODO create a check so if there is no records in database to not crash
         query = "SELECT * FROM employees ORDER BY ROWid ASC LIMIT 1"
         employee = cursor.execute(query).fetchone()
         img = QLabel()
@@ -159,11 +159,23 @@ class UpdateEmployee(QWidget):
         self.show()
 
     def ui(self):
+        self.get_employee_info()
         self.main_design()
         self.layouts()
 
     def closeEvent(self, event):
         self.main = Main()
+
+    def get_employee_info(self):
+        global employee_id
+        query = "SELECT * FROM employees WHERE id=?"
+        employee = cursor.execute(query, (employee_id, )).fetchone()
+        self.name = employee[1]
+        self.surname = employee[2]
+        self.phone = employee[3]
+        self.email = employee[4]
+        self.image = employee[5]
+        self.address = employee[6]
 
     def main_design(self):
         # top layout widgets
@@ -173,35 +185,36 @@ class UpdateEmployee(QWidget):
         # self.title.setStyleSheet('font-size: 24pt;font-family:Arial Bold; background-color: red')
         self.title.setStyleSheet('font-size: 24pt;font-family:Arial Bold')
         self.img_add = QLabel()
-        self.img_add.setPixmap(QPixmap("icons/person.png"))
+        self.img_add.setPixmap(QPixmap("images/{}".format(self.image)))
 
         # bottom layout widgets
 
         self.name_label = QLabel("Name : ")
         self.name_entry = QLineEdit()
         self.name_entry.setStyleSheet('font-size: 10pt')
-        self.name_entry.setPlaceholderText("Enter Employee Name")
+        self.name_entry.setText(self.name)
         self.surname_label = QLabel("Surname : ")
         self.surname_entry = QLineEdit()
+        self.surname_entry.setText(self.surname)
         self.surname_entry.setStyleSheet('font-size: 10pt')
-        self.surname_entry.setPlaceholderText("Enter Employee Surname")
         self.phone_label = QLabel("Phone : ")
         self.phone_entry = QLineEdit()
+        self.phone_entry.setText(self.phone)
         self.phone_entry.setStyleSheet('font-size: 10pt')
-        self.phone_entry.setPlaceholderText("Enter Employee Phone Number")
         self.email_label = QLabel("Email : ")
         self.email_entry = QLineEdit()
+        self.email_entry.setText(self.email)
         self.email_entry.setStyleSheet('font-size: 10pt')
-        self.email_entry.setPlaceholderText("Enter Employee Email")
         self.img_label = QLabel("Picture : ")
         self.img_btn = QPushButton("Browse")
         self.img_btn.setStyleSheet("background-color: orange; font-size: 10pt")
-
+        self.img_btn.clicked.connect(self.upload_image)
         self.address_label = QLabel("Address : ")
         self.address_entry = QTextEdit()
+        self.address_entry.setText(self.address)
         self.update_button = QPushButton("Update")
+        self.update_button.clicked.connect(self.update_employee)
         self.update_button.setStyleSheet("background-color: orange; font-size: 10pt")
-
 
     def layouts(self):
         # layouts
@@ -233,6 +246,49 @@ class UpdateEmployee(QWidget):
 
         # setting main layout for window
         self.setLayout(self.main_layout)
+
+    def upload_image(self):
+        global default_img
+        self.size = (128, 128)
+        self.file_name, ok = QFileDialog.getOpenFileName(self, 'Upload Image', '', 'Image Files (*.jpeg *.png)')
+
+        if ok:
+
+            default_img = os.path.basename(self.file_name)
+            img = Image.open(self.file_name)
+            img = img.resize(self.size)
+            img.save("images/{}".format(default_img))
+
+    def update_employee(self):
+        global default_img
+        global employee_id
+        must_have_fields = ["Name", "Surname", "Phone"]
+        name = self.name_entry.text()
+        surname = self.surname_entry.text()
+        phone = self.phone_entry.text()
+        email = self.email_entry.text()
+        img = default_img
+        address = self.address_entry.toPlainText()
+        if name and surname and phone != "":
+            try:
+                query = "UPDATE employees set name=?, surname=?, phone=?, email=?, image=?, address=? WHERE id=?"
+                cursor.execute(query, (name, surname, phone, email, img, address, employee_id))
+                con.commit()
+                QMessageBox.information(self, "Success", "Employee has been updated")
+                self.close()
+                self.main = Main()
+
+            except:
+                QMessageBox.information(self, "Warning", "Employee hasn't been updated. "
+                                                         "Please check the fields and try again")
+        else:
+            if name != "":
+                must_have_fields.pop(0)
+            if surname != "":
+                must_have_fields.pop(1)
+            if phone != "":
+                must_have_fields.pop(2)
+            QMessageBox.information(self, "Warnings", "{} fields cannot be empty".format(must_have_fields))
 
 
 class AddEmployee(QWidget):
