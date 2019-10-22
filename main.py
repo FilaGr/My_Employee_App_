@@ -73,23 +73,26 @@ class Main(QWidget):
     def display_record(self):
         pass
 
-    def display_first_record(self):  # TODO create a check so if there is no records in database to not crash
+    def display_first_record(self):
         query = "SELECT * FROM employees ORDER BY ROWid ASC LIMIT 1"
-        employee = cursor.execute(query).fetchone()
-        img = QLabel()
-        img.setPixmap(QPixmap("images/" + employee[5]))
 
-        name = QLabel(employee[1])
-        surname = QLabel(employee[2])
-        phone = QLabel(employee[3])
-        email = QLabel(employee[2])
-        address = QLabel(employee[6])
-        self.left_layout.addRow("", img)
-        self.left_layout.addRow("Name: ", name)
-        self.left_layout.addRow("Surname: ", surname)
-        self.left_layout.addRow("Phone: ", phone)
-        self.left_layout.addRow("Email: ", email)
-        self.left_layout.addRow("Address: ", address)
+        employee = cursor.execute(query).fetchone()
+        # checks if there is any records in the query.
+        if employee:
+            img = QLabel()
+            img.setPixmap(QPixmap("images/" + employee[5]))
+
+            name = QLabel(employee[1])
+            surname = QLabel(employee[2])
+            phone = QLabel(employee[3])
+            email = QLabel(employee[2])
+            address = QLabel(employee[6])
+            self.left_layout.addRow("", img)
+            self.left_layout.addRow("Name: ", name)
+            self.left_layout.addRow("Surname: ", surname)
+            self.left_layout.addRow("Phone: ", phone)
+            self.left_layout.addRow("Email: ", email)
+            self.left_layout.addRow("Address: ", address)
 
     def single_click(self):
         for i in reversed(range(self.left_layout.count())):
