@@ -256,7 +256,7 @@ class UpdateEmployee(QWidget):
         self.file_name, ok = QFileDialog.getOpenFileName(self, 'Upload Image', '', 'Image Files (*.jpeg *.png)')
 
         if ok:
-
+            print(ok, self.file_name)
             default_img = os.path.basename(self.file_name)
             img = Image.open(self.file_name)
             img = img.resize(self.size)
@@ -286,11 +286,11 @@ class UpdateEmployee(QWidget):
                                                          "Please check the fields and try again")
         else:
             if name != "":
-                must_have_fields.pop(0)
+                must_have_fields.remove('Name')
             if surname != "":
-                must_have_fields.pop(1)
+                must_have_fields.remove('Surname')
             if phone != "":
-                must_have_fields.pop(2)
+                must_have_fields.remove('Phone')
             QMessageBox.information(self, "Warnings", "{} fields cannot be empty".format(must_have_fields))
 
 
@@ -413,11 +413,11 @@ class AddEmployee(QWidget):
                                                          "Please check the fields and try again")
         else:
             if name != "":
-                must_have_fields.pop(0)
+                must_have_fields.remove('Name')
             if surname != "":
-                must_have_fields.pop(1)
+                must_have_fields.remove('Surname')
             if phone != "":
-                must_have_fields.pop(2)
+                must_have_fields.remove('Phone')
             QMessageBox.information(self, "Warnings", "{} fields cannot be empty".format(must_have_fields))
 
 
